@@ -5,10 +5,10 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 
-// Import AdminLTE JS
-import 'admin-lte/dist/js/adminlte.min.js';
+// We've removed AdminLTE JavaScript completely
+// Instead, we're implementing the necessary functionality directly in Vue
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'UPG MIS';
 
 createInertiaApp({
     title: (title) => title ? `${title} - ${appName}` : appName,
@@ -20,9 +20,12 @@ createInertiaApp({
             .mount(el);
     },
     progress: {
-        // Use our primary blue color from AdminLTE theme
-        color: '#2563eb',
+        // Use AdminLTE primary blue color for consistency
+        color: '#007bff',
         showSpinner: true,
-        delay: 250,
+        delay: 0, // Show immediately
+        includeCSS: true,
+        // Ensure higher z-index to appear above AdminLTE elements
+        zIndex: 9999
     }
 });

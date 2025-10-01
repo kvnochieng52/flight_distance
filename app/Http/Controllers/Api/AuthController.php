@@ -1,0 +1,198 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+
+class AuthController extends Controller
+{
+    /**
+     * Register a new user
+     */
+    public function register(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
+                'telephone' => 'required|string|max:20',
+                'password' => 'required|string|min:8|confirmed',
+                'device_name' => 'required|string'
+            ]);
+
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'telephone' => $request->telephone,
+                'password' => Hash::make($request->password),
+            ]);
+
+            $token = $user->createToken($request->device_name)->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User registered successfully',
+                'data' => [
+                    'user' => $user,
+                    'token' => $token,
+                    'token_type' => 'Bearer'
+                ]
+            ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to register user',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Login user and issue token
+     */
+    public function login(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
+                'device_name' => 'required|string'
+            ]);
+
+            $user = User::where('email', $request->email)->first();
+
+            if (!$user || !Hash::check($request->password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The provided credentials are incorrect.'
+                ], 401);
+            }
+
+            // Revoke all existing tokens for this device (optional - for security)
+            $user->tokens()->where('name', $request->device_name)->delete();
+
+            $token = $user->createToken($request->device_name)->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Login successful',
+                'data' => [
+                    'user' => $user,
+                    'token' => $token,
+                    'token_type' => 'Bearer'
+                ]
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Login failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Create API token for authentication (legacy method)
+     */
+    public function createToken(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
+                'device_name' => 'required|string'
+            ]);
+
+            $user = User::where('email', $request->email)->first();
+
+            if (!$user || !Hash::check($request->password, $user->password)) {
+                throw ValidationException::withMessages([
+                    'email' => ['The provided credentials are incorrect.'],
+                ]);
+            }
+
+            $token = $user->createToken($request->device_name)->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Token created successfully',
+                'data' => [
+                    'user' => $user,
+                    'token' => $token,
+                    'token_type' => 'Bearer'
+                ]
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create token',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Revoke current token
+     */
+    public function revokeToken(Request $request): JsonResponse
+    {
+        try {
+            $request->user()->currentAccessToken()->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Token revoked successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to revoke token',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Revoke all tokens for the user
+     */
+    public function revokeAllTokens(Request $request): JsonResponse
+    {
+        try {
+            $request->user()->tokens()->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'All tokens revoked successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to revoke tokens',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+}

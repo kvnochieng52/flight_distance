@@ -2,6 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\CoordinateController;
+use App\Http\Controllers\Api\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +16,33 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+// Authentication routes (public)
+Route::post('/auth/register', [AuthController::class, 'register']);
+Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/token', [AuthController::class, 'createToken']); // Legacy endpoint
+
+Route::middleware('auth:sanctum')->group(function () {
+    // User info route
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    // Auth management routes
+    Route::post('/auth/revoke-token', [AuthController::class, 'revokeToken']);
+    Route::post('/auth/revoke-all-tokens', [AuthController::class, 'revokeAllTokens']);
+
+    // Coordinates API routes
+    Route::prefix('coordinates')->group(function () {
+        // Get all active coordinates (with pagination and search)
+        Route::get('/', [CoordinateController::class, 'index']);
+
+        // Get coordinate by ID
+        Route::get('/{id}', [CoordinateController::class, 'show']);
+
+        // Search coordinates by location name
+        Route::get('/search/location', [CoordinateController::class, 'searchByLocation']);
+
+        // Get nearby coordinates within radius
+        Route::get('/search/nearby', [CoordinateController::class, 'getNearby']);
+    });
 });

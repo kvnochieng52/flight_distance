@@ -19,8 +19,8 @@ const submit = () => {
         <div class="login-box">
             <!-- Logo -->
             <div class="login-logo text-center mb-4">
-                <img src="/images/logo.png" alt="Azam TV Logo" class="img-fluid mb-2" style="max-width: 140px;">
-                <h1 class="h4 font-weight-bold">Azam TV <span class="text-primary">SMS</span></h1>
+                <img src="/images/logo.png" alt="UPG MIS Logo" class="img-fluid mb-2" style="max-width: 140px;">
+                <h1 class="h5 font-weight-bold">UPG MIS</h1>
             </div>
             
             <!-- Confirm Password Card -->

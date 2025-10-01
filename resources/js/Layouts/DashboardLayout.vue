@@ -1,11 +1,12 @@
 <template>
-  <div class="wrapper">
+  <LoadingBar />
+  <div class="wrapper" :class="{ 'sidebar-collapse': sidebarCollapsed, 'sidebar-open': sidebarOpen && isMobile }">
     <!-- Navbar -->
     <nav class="main-header navbar navbar-expand navbar-white navbar-light">
       <!-- Left navbar links -->
       <ul class="navbar-nav">
         <li class="nav-item">
-          <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+          <a class="nav-link" href="#" role="button" @click.prevent="toggleSidebar"><i class="fas fa-bars"></i></a>
         </li>
         <li class="nav-item d-none d-sm-inline-block">
           <a href="#" class="nav-link">Home</a>
@@ -14,22 +15,28 @@
 
       <!-- Right navbar links -->
       <ul class="navbar-nav ml-auto">
+        <!-- Theme Switcher -->
         <li class="nav-item">
-          <a class="nav-link" data-widget="fullscreen" href="#" role="button">
+          <a class="nav-link" href="#" role="button" @click.prevent="toggleDarkMode">
+            <i :class="darkMode ? 'fas fa-sun' : 'fas fa-moon'"></i>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" role="button" @click.prevent="toggleFullscreen">
             <i class="fas fa-expand-arrows-alt"></i>
           </a>
         </li>
         <li class="nav-item dropdown">
-          <a class="nav-link" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-expanded="false">
+          <a class="nav-link" href="#" id="userDropdown" role="button" @click.prevent="toggleUserDropdown" :aria-expanded="userDropdownOpen">
             <i class="fas fa-user-circle"></i>
           </a>
-          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+          <div class="dropdown-menu dropdown-menu-right" :class="{ show: userDropdownOpen }" aria-labelledby="userDropdown">
             <div class="dropdown-header text-center pb-2 pt-2 border-bottom">
               <strong>{{ user?.name || 'Administrator' }}</strong>
             </div>
-            <a href="#" class="dropdown-item py-2">
+            <Link :href="route('profile.edit')" class="dropdown-item py-2" @click="userDropdownOpen = false">
               <i class="fas fa-user mr-2 text-primary"></i> My Profile
-            </a>
+            </Link>
             <a href="#" class="dropdown-item py-2">
               <i class="fas fa-cog mr-2 text-secondary"></i> Settings
             </a>
@@ -60,18 +67,18 @@
               <i class="fas fa-user-circle fa-2x text-light"></i>
             </div>
             <div class="info">
-              <a href="#" class="d-block dropdown-toggle" data-toggle="collapse" data-target="#userOptions">
+              <a href="#" class="d-block dropdown-toggle" @click.prevent="toggleSidebarUserPanel">
                 {{ user?.name || 'Administrator' }}
               </a>
             </div>
           </div>
           
           <!-- User options dropdown -->
-          <div id="userOptions" class="collapse mt-2">
+          <div id="userOptions" class="mt-2" :class="{ 'd-none': !sidebarUserPanelOpen }">
             <div class="bg-dark rounded p-2 ml-2">
-              <a href="#" class="text-white d-block py-1 px-2 rounded hover-bg-light">
+              <Link :href="route('profile.edit')" class="text-white d-block py-1 px-2 rounded hover-bg-light" @click="sidebarUserPanelOpen = false">
                 <i class="fas fa-user-edit mr-2"></i> Edit Profile
-              </a>
+              </Link>
               <a href="#" class="text-white d-block py-1 px-2 rounded hover-bg-light" @click.prevent="logout">
                 <i class="fas fa-sign-out-alt mr-2"></i> Logout
               </a>
@@ -83,10 +90,10 @@
         <nav class="mt-2">
           <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
             <li class="nav-item">
-              <a href="/" class="nav-link active">
+              <Link :href="route('home.dashboard')" class="nav-link active">
                 <i class="nav-icon fas fa-tachometer-alt"></i>
                 <p>Dashboard</p>
-              </a>
+              </Link>
             </li>
             <li class="nav-item">
               <a href="#" class="nav-link">
@@ -150,7 +157,7 @@
 
     <!-- Main Footer -->
     <footer class="main-footer">
-      <strong>Copyright &copy; {{ new Date().getFullYear() }} <a href="#">Azam TV Bulk SMS</a>.</strong>
+      <strong>Copyright &copy; {{ new Date().getFullYear() }} <a href="#">UPG MIS</a>.</strong>
       All rights reserved.
       <div class="float-right d-none d-sm-inline-block">
         <b>Version</b> 1.0.0
@@ -160,8 +167,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
+import { ref, onMounted, computed, onBeforeUnmount } from 'vue';
+import { router, usePage, Link } from '@inertiajs/vue3';
+import LoadingBar from '@/Components/LoadingBar.vue';
 
 const props = defineProps({
   title: {
@@ -170,115 +178,173 @@ const props = defineProps({
   }
 });
 
+// Reactive variables for UI state
+const sidebarCollapsed = ref(false);
+const sidebarOpen = ref(false); // For mobile view
+const isMobile = ref(window.innerWidth < 992);
+const activeMenuItem = ref('');
+const openMenus = ref([]); // All menus collapsed by default
+const userDropdownOpen = ref(false);
+const sidebarUserPanelOpen = ref(false);
+const darkMode = ref(localStorage.getItem('darkMode') === 'true');
+
 // Get the authenticated user from Laravel
 const user = computed(() => usePage().props.auth.user);
 
+// Toggle sidebar collapsed/open state
+function toggleSidebar() {
+  if (isMobile.value) {
+    // On mobile, toggle the sidebar-open class
+    sidebarOpen.value = !sidebarOpen.value;
+  } else {
+    // On desktop, toggle the sidebar-collapse class
+    sidebarCollapsed.value = !sidebarCollapsed.value;
+  }
+}
+
+// Toggle menu item expansion
+function toggleMenu(menuName) {
+  if (openMenus.value.includes(menuName)) {
+    openMenus.value = openMenus.value.filter(name => name !== menuName);
+  } else {
+    openMenus.value.push(menuName);
+  }
+}
+
+// Check if a menu is open
+function isMenuOpen(menuName) {
+  return openMenus.value.includes(menuName);
+}
+
+// Toggle user dropdown
+function toggleUserDropdown() {
+  userDropdownOpen.value = !userDropdownOpen.value;
+}
+
+// Toggle fullscreen
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+}
+
+// Toggle sidebar user panel
+function toggleSidebarUserPanel() {
+  sidebarUserPanelOpen.value = !sidebarUserPanelOpen.value;
+}
+
+// Logout function
 function logout() {
   router.post(route('logout'));
 }
 
-// Function to initialize AdminLTE components
-function initAdminLTE() {
-  // Better implementation for dropdown toggle
-  setupUserDropdown();
-  
-  // Initialize all AdminLTE features if available
-  if (window.$ && window.$.AdminLTE) {
-    window.$.AdminLTE.init();
+// Go to profile function
+function goToProfile() {
+  userDropdownOpen.value = false;
+  sidebarUserPanelOpen.value = false;
+  router.visit(route('profile.edit'));
+}
+
+// Set active menu item based on current route
+function setActiveMenuItem() {
+  const currentUrl = window.location.pathname;
+  activeMenuItem.value = currentUrl;
+
+  // Automatically expand parent menus if they contain the active item
+  if (currentUrl.includes('/sms') && !openMenus.value.includes('sms')) {
+    openMenus.value.push('sms');
   }
 }
 
-// Handle the user dropdown menu specifically
-function setupUserDropdown() {
-  // First, remove any existing click handlers to prevent duplicates
-  const userDropdownToggle = document.getElementById('userDropdown');
-  
-  if (userDropdownToggle) {
-    // Remove old event listeners
-    userDropdownToggle.removeEventListener('click', toggleDropdown);
-    
-    // Add fresh event listener
-    userDropdownToggle.addEventListener('click', toggleDropdown);
-  }
-  
-  // Set up document-level click listener for closing dropdowns
-  document.removeEventListener('click', closeDropdownOutside);
-  document.addEventListener('click', closeDropdownOutside);
+// Toggle dark mode
+function toggleDarkMode() {
+  darkMode.value = !darkMode.value;
+  localStorage.setItem('darkMode', darkMode.value.toString());
+  applyTheme();
 }
 
-// Toggle dropdown function
-function toggleDropdown(e) {
-  e.preventDefault();
-  // Use event target instead of 'this' for more reliable behavior
-  const toggle = e.currentTarget;
-  const dropdownMenu = toggle.nextElementSibling;
-  if (dropdownMenu) {
-    dropdownMenu.classList.toggle('show');
-    toggle.setAttribute('aria-expanded', dropdownMenu.classList.contains('show'));
-  }
-}
+// Apply theme function
+function applyTheme() {
+  // Toggle dark mode class on body
+  document.body.classList.toggle('dark-mode', darkMode.value);
 
-// Function to handle closing dropdown when clicking outside
-function closeDropdownOutside(e) {
-  const userDropdownToggle = document.getElementById('userDropdown');
-  if (userDropdownToggle && !userDropdownToggle.contains(e.target)) {
-    const dropdownMenu = userDropdownToggle.nextElementSibling;
-    if (dropdownMenu && dropdownMenu.classList.contains('show')) {
-      dropdownMenu.classList.remove('show');
-      userDropdownToggle.setAttribute('aria-expanded', 'false');
+  // Update navbar classes based on theme
+  const navbar = document.querySelector('.main-header');
+  if (navbar) {
+    if (darkMode.value) {
+      navbar.classList.add('navbar-dark');
+      navbar.classList.remove('navbar-light', 'navbar-white');
+    } else {
+      navbar.classList.remove('navbar-dark');
+      navbar.classList.add('navbar-light', 'navbar-white');
     }
   }
 }
 
-// Initialize AdminLTE JS functionality after component is mounted
+// Handle clicks outside dropdowns to close them
+function handleClickOutside(e) {
+  // Don't interfere with Link components
+  if (e.target.closest('a[href]') || e.target.closest('[data-inertia]')) {
+    return;
+  }
+
+  // Close user dropdown if clicking outside
+  const userDropdownToggle = document.getElementById('userDropdown');
+  const dropdownMenu = document.querySelector('.dropdown-menu');
+
+  if (userDropdownOpen.value &&
+      userDropdownToggle &&
+      !userDropdownToggle.contains(e.target) &&
+      (!dropdownMenu || !dropdownMenu.contains(e.target))) {
+    userDropdownOpen.value = false;
+  }
+
+  // Close sidebar user panel if clicking outside
+  const sidebarUserPanel = document.getElementById('userOptions');
+  const sidebarUserToggle = document.querySelector('.sidebar .dropdown-toggle');
+
+  if (sidebarUserPanelOpen.value &&
+      sidebarUserPanel &&
+      sidebarUserToggle &&
+      !sidebarUserPanel.contains(e.target) &&
+      !sidebarUserToggle.contains(e.target)) {
+    sidebarUserPanelOpen.value = false;
+  }
+}
+
+// Handle window resize
+function handleResize() {
+  isMobile.value = window.innerWidth < 992;
+
+  // Reset sidebar state on resize
+  if (!isMobile.value) {
+    sidebarOpen.value = false;
+  }
+}
+
+// Initialize component
 onMounted(() => {
-  // Initialize on first load
-  initAdminLTE();
-  
-  // Also initialize after each Inertia navigation
-  router.on('finish', () => {
-    // Small delay to ensure DOM is updated
-    setTimeout(() => {
-      initAdminLTE();
-    }, 50);
-  });
-  
-  // Toggle sidebar menu items
-  document.querySelectorAll('.nav-treeview').forEach(el => {
-    // Initialize with closed state
-    el.style.display = 'none';
-  });
+  // Apply theme on component mount
+  applyTheme();
 
-  // Add click handlers to menu items with submenu
-  document.querySelectorAll('.nav-item a').forEach(el => {
-    if (el.nextElementSibling && el.nextElementSibling.classList.contains('nav-treeview')) {
-      el.addEventListener('click', (e) => {
-        e.preventDefault();
-        const submenu = el.nextElementSibling;
-        if (submenu.style.display === 'none' || submenu.style.display === '') {
-          submenu.style.display = 'block';
-          el.classList.add('active');
-        } else {
-          submenu.style.display = 'none';
-          el.classList.remove('active');
-        }
-      });
-    }
-  });
+  // Set active menu item
+  setActiveMenuItem();
 
-  // Initialize other AdminLTE components
-  if (window.$.AdminLTE) {
-    window.$.AdminLTE.init();
-  } else if (window.AdminLTE) {
-    // For AdminLTE 3.x
-    document.querySelectorAll('[data-widget="pushmenu"]').forEach(el => {
-      el.addEventListener('click', (e) => {
-        e.preventDefault();
-        document.body.classList.toggle('sidebar-collapse');
-        document.body.classList.toggle('sidebar-open');
-      });
-    });
-  }
+  // Add event listeners
+  document.addEventListener('click', handleClickOutside);
+  window.addEventListener('resize', handleResize);
+
+  // Note: Removed router event handlers that were interfering with navigation
+});
+
+// Clean up event listeners when component is unmounted
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('resize', handleResize);
 });
 </script>
 
@@ -339,6 +405,120 @@ onMounted(() => {
 .hover-bg-light:hover {
   background-color: rgba(255, 255, 255, 0.1);
   transition: background-color 0.2s;
+}
+
+/* Dark mode enhancements */
+body.dark-mode {
+  /* Main background and text colors */
+  background-color: #121212;
+  color: #f8f9fa;
+}
+
+/* Dark mode card styling */
+body.dark-mode .card {
+  background-color: #1e1e1e;
+  border-color: #2c2c2c;
+}
+
+body.dark-mode .card-header {
+  background-color: #2a2a2a;
+  border-bottom-color: #333;
+}
+
+body.dark-mode .card-footer {
+  background-color: #2a2a2a;
+  border-top-color: #333;
+}
+
+/* Dark mode content wrapper */
+body.dark-mode .content-wrapper {
+  background-color: #121212;
+}
+
+/* Dark mode table styling */
+body.dark-mode .table {
+  color: #e0e0e0;
+}
+
+body.dark-mode .table-bordered {
+  border-color: #333;
+}
+
+body.dark-mode .table-bordered td,
+body.dark-mode .table-bordered th {
+  border-color: #333;
+}
+
+body.dark-mode .table-hover tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.075);
+}
+
+/* Dark mode input styling */
+body.dark-mode .form-control {
+  background-color: #2a2a2a;
+  border-color: #444;
+  color: #e0e0e0;
+}
+
+body.dark-mode .form-control:focus {
+  background-color: #323232;
+  border-color: #666;
+  box-shadow: 0 0 0 0.2rem rgba(130, 138, 145, 0.25);
+}
+
+/* Dark mode footer */
+body.dark-mode .main-footer {
+  background-color: #1a1a1a;
+  border-top-color: #333;
+  color: #e0e0e0;
+}
+
+/* Dark mode modal styling */
+body.dark-mode .modal-content {
+  background-color: #2a2a2a;
+  border-color: #444;
+}
+
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer {
+  border-color: #444;
+}
+
+/* Dark mode toast/alert styling */
+body.dark-mode .toast {
+  background-color: #2a2a2a;
+  border-color: #444;
+}
+
+body.dark-mode .alert-success {
+  background-color: rgba(40, 167, 69, 0.2);
+  border-color: rgba(40, 167, 69, 0.3);
+  color: #75b798;
+}
+
+body.dark-mode .alert-danger {
+  background-color: rgba(220, 53, 69, 0.2);
+  border-color: rgba(220, 53, 69, 0.3);
+  color: #ea868f;
+}
+
+/* Dark mode dropdown styling */
+body.dark-mode .dropdown-menu {
+  background-color: #2a2a2a;
+  border-color: #444;
+}
+
+body.dark-mode .dropdown-item {
+  color: #e0e0e0;
+}
+
+body.dark-mode .dropdown-item:hover {
+  background-color: #333;
+  color: #fff;
+}
+
+body.dark-mode .dropdown-divider {
+  border-color: #444;
 }
 
 /* Make sure dropdown toggle has a pointer cursor */

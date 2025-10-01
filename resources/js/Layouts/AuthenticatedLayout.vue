@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
+import LoadingBar from '@/Components/LoadingBar.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
@@ -11,6 +12,7 @@ const showingNavigationDropdown = ref(false);
 </script>
 
 <template>
+    <LoadingBar />
     <div>
         <div class="min-h-screen bg-gray-100">
             <nav class="bg-white border-b border-gray-100">

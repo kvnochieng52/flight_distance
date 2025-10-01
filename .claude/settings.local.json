@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan route:list:*)",
+      "Read(//c/laragon/www/azam_tv_bulk_sms/resources/js/**)",
+      "Read(//c/laragon/www/azam_tv_bulk_sms/resources/js/Layouts/**)",
+      "Bash(php artisan make:migration:*)",
+      "Bash(php artisan make:seeder:*)",
+      "Bash(php artisan make:controller:*)",
+      "Bash(php artisan make:model:*)",
+      "Read(//c/Flutter Live/flight_distance/**)",
+      "Read(//c/Flutter Live/flight_distance/lib/**)",
+      "Bash(flutter run:*)",
+      "Read(//c/Flutter Live/ticket_guru_qr_scanner/lib/**)",
+      "Read(//c/Flutter Live/ticket_guru_qr_scanner/**)",
+      "Bash(flutter pub:*)",
+      "Bash(flutter:*)",
+      "Bash(php artisan serve:*)",
+      "Bash(curl:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -17,6 +17,7 @@ class CoordinateController extends Controller
         try {
             $perPage = $request->get('per_page', 15);
             $search = $request->get('search');
+            $getAll = $request->get('all', false); // New parameter to get all coordinates
 
             $query = Coordinate::active();
 
@@ -24,6 +25,19 @@ class CoordinateController extends Controller
                 $query->where('location_name', 'like', "%{$search}%");
             }
 
+            // If 'all' parameter is true, get all coordinates without pagination
+            if ($getAll || $perPage === 'all') {
+                $coordinates = $query->orderBy('location_name')->get();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'All active coordinates retrieved successfully',
+                    'data' => $coordinates,
+                    'total' => $coordinates->count()
+                ]);
+            }
+
+            // Otherwise, use pagination as before
             $coordinates = $query->orderBy('location_name')->paginate($perPage);
 
             return response()->json([

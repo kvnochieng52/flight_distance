@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CoordinateController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PlaneController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,5 +45,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Get nearby coordinates within radius
         Route::get('/search/nearby', [CoordinateController::class, 'getNearby']);
+    });
+
+    // Planes API routes
+    Route::prefix('planes')->group(function () {
+        // Get all planes
+        Route::get('/', [PlaneController::class, 'index']);
+
+        // Get plane by ID
+        Route::get('/{id}', [PlaneController::class, 'show']);
     });
 });

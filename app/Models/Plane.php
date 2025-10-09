@@ -13,6 +13,7 @@ class Plane extends Model
         'name',
         'model',
         'capacity',
-        'speed'
+        'speed',
+        'fuel_burn_rate'
     ];
 }

@@ -18,13 +18,15 @@ class PlaneSeeder extends Seeder
                 'name' => 'CARAVAN',
                 'model' => 'CESSNA C208',
                 'capacity' => '1MT',
-                'speed' => 140
+                'speed' => 140,
+                'fuel_burn_rate' => 35.5 // gallons per hour
             ],
             [
                 'name' => 'CARAVAN',
                 'model' => 'LET 410',
                 'capacity' => '2MT',
-                'speed' => 160
+                'speed' => 160,
+                'fuel_burn_rate' => 45.2 // gallons per hour
             ]
         ];
 

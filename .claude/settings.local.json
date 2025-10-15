@@ -17,7 +17,9 @@
       "Bash(flutter:*)",
       "Bash(php artisan serve:*)",
       "Bash(curl:*)",
-      "Bash(php artisan:*)"
+      "Bash(php artisan:*)",
+      "Bash(timeout 5 bash -c 'until curl -f http://localhost:8002/api/planes; do sleep 1; done')",
+      "Bash(timeout 5 bash -c 'until curl -f http://localhost:8002/api/news; do sleep 1; done')"
     ],
     "deny": [],
     "ask": []

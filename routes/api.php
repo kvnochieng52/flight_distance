@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CoordinateController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PlaneController;
+use App\Http\Controllers\NewsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -54,5 +55,27 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Get plane by ID
         Route::get('/{id}', [PlaneController::class, 'show']);
+    });
+
+    // News API routes
+    Route::prefix('news')->group(function () {
+        // Get latest 3 news (for home screen)
+        Route::get('/', [NewsController::class, 'index']);
+
+        // Get all news (for management)
+        Route::get('/all', [NewsController::class, 'all']);
+
+        // Create news
+        Route::post('/', [NewsController::class, 'store']);
+
+        // Get specific news
+        Route::get('/{id}', [NewsController::class, 'show']);
+
+        // Update news
+        Route::put('/{id}', [NewsController::class, 'update']);
+        Route::patch('/{id}', [NewsController::class, 'update']);
+
+        // Delete news
+        Route::delete('/{id}', [NewsController::class, 'destroy']);
     });
 });

@@ -33,6 +33,14 @@ class AuthController extends Controller
                 'is_active' => false, // User needs admin approval
             ]);
 
+            // Log successful registration
+            Log::info('User registered successfully', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Registration successful! Your account is pending approval by an administrator.',
@@ -41,16 +49,34 @@ class AuthController extends Controller
                 ]
             ], 201);
         } catch (ValidationException $e) {
+            // Log validation errors
+            Log::warning('User registration validation failed', [
+                'errors' => $e->errors(),
+                'input' => $request->except(['password', 'password_confirmation']),
+                'ip_address' => $request->ip()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
+            // Log unexpected errors
+            Log::error('User registration failed with exception', [
+                'message' => $e->getMessage(),
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'input' => $request->except(['password', 'password_confirmation']),
+                'ip_address' => $request->ip()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to register user',
-                'error' => $e->getMessage()
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred during registration'
             ], 500);
         }
     }

@@ -46,7 +46,7 @@ class AuthController extends Controller
                 'success' => true,
                 'message' => 'Registration successful! Your account is pending approval by an administrator.',
                 'data' => [
-                    'user' => $user->only(['id', 'name', 'email', 'telephone', 'is_active'])
+                    //'user' => $user->only(['id', 'name', 'email', 'telephone', 'is_active'])
                 ]
             ], 201);
         } catch (ValidationException $e) {

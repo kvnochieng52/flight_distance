@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CoordinateController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PlaneController;
+use App\Http\Controllers\Api\TermsController;
 use App\Http\Controllers\NewsController;
 
 /*
@@ -32,6 +33,9 @@ Route::prefix('news')->group(function () {
     // Get specific news - public access
     Route::get('/{id}', [NewsController::class, 'show']);
 });
+
+// Public terms and conditions route
+Route::get('/terms', [TermsController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
     // User info route

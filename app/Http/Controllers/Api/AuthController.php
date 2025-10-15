@@ -30,17 +30,14 @@ class AuthController extends Controller
                 'email' => $request->email,
                 'telephone' => $request->telephone,
                 'password' => Hash::make($request->password),
+                'is_active' => false, // User needs admin approval
             ]);
-
-            $token = $user->createToken($request->device_name)->plainTextToken;
 
             return response()->json([
                 'success' => true,
-                'message' => 'User registered successfully',
+                'message' => 'Registration successful! Your account is pending approval by an administrator.',
                 'data' => [
-                    'user' => $user,
-                    'token' => $token,
-                    'token_type' => 'Bearer'
+                    'user' => $user->only(['id', 'name', 'email', 'telephone', 'is_active'])
                 ]
             ], 201);
         } catch (ValidationException $e) {
@@ -77,6 +74,14 @@ class AuthController extends Controller
                     'success' => false,
                     'message' => 'The provided credentials are incorrect.'
                 ], 401);
+            }
+
+            // Check if user account is active (approved by admin)
+            if (!$user->is_active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your account is pending approval.'
+                ], 403);
             }
 
             // Revoke all existing tokens for this device (optional - for security)

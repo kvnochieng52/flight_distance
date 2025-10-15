@@ -69,6 +69,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Protected news management routes
     Route::prefix('news/manage')->group(function () {
+        // Get current user's news
+        Route::get('/my-news', [NewsController::class, 'myNews']);
+
         // Create news
         Route::post('/', [NewsController::class, 'store']);
 

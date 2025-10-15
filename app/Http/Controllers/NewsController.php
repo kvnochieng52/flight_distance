@@ -39,6 +39,30 @@ class NewsController extends Controller
     }
 
     /**
+     * Get news for the current authenticated user
+     */
+    public function myNews(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not authenticated'
+            ], 401);
+        }
+
+        $news = News::where('posted_by', $user->name)
+                   ->orderBy('date_posted', 'desc')
+                   ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $news
+        ]);
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)

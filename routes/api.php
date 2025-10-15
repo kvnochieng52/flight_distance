@@ -23,6 +23,16 @@ Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/token', [AuthController::class, 'createToken']); // Legacy endpoint
 
+// Public news routes (read-only)
+Route::prefix('news')->group(function () {
+    // Get latest 3 news (for home screen) - public access
+    Route::get('/', [NewsController::class, 'index']);
+    // Get all news (for public viewing) - public access
+    Route::get('/all', [NewsController::class, 'all']);
+    // Get specific news - public access
+    Route::get('/{id}', [NewsController::class, 'show']);
+});
+
 Route::middleware('auth:sanctum')->group(function () {
     // User info route
     Route::get('/user', function (Request $request) {
@@ -57,19 +67,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [PlaneController::class, 'show']);
     });
 
-    // News API routes
-    Route::prefix('news')->group(function () {
-        // Get latest 3 news (for home screen)
-        Route::get('/', [NewsController::class, 'index']);
-
-        // Get all news (for management)
-        Route::get('/all', [NewsController::class, 'all']);
-
+    // Protected news management routes
+    Route::prefix('news/manage')->group(function () {
         // Create news
         Route::post('/', [NewsController::class, 'store']);
-
-        // Get specific news
-        Route::get('/{id}', [NewsController::class, 'show']);
 
         // Update news
         Route::put('/{id}', [NewsController::class, 'update']);
